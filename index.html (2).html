@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Operation Weihnachtsmann</title>
+<style>
+:root{--gold:#ffd66b;--red:#d84b5c;--green:#2c8059;--ink:#092027}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#28614b,#102e2c 55%,#07171d);color:#fff;font-family:system-ui,Segoe UI,sans-serif;padding:22px}
+main{width:min(900px,100%);margin:auto}.panel{background:#0a1e20df;border:1px solid #ffffff30;border-radius:22px;padding:clamp(18px,4vw,32px);box-shadow:0 18px 60px #0006}
+h1{font-size:clamp(2rem,7vw,3.7rem);line-height:1.05;color:var(--gold);margin:8px 0 12px;text-align:center}
+h2{color:var(--gold);margin-top:0}p{line-height:1.5}.center{text-align:center}.muted{opacity:.76}.gold{color:var(--gold)}
+button{border:0;border-radius:12px;padding:12px 17px;font-weight:750;font-size:1rem;cursor:pointer;background:var(--gold);color:#30220a}
+button.secondary{background:#ffffff18;color:white;border:1px solid #ffffff40}button:disabled{opacity:.4;cursor:not-allowed}
+input{padding:12px;border-radius:10px;border:1px solid #ffffff55;background:#061619;color:#fff;font-size:1rem;max-width:100%}
+.hidden{display:none!important}.topline{text-align:center;letter-spacing:3px;color:#bcebd1;font-weight:800}
+.timer{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:24px 0}.unit{background:#ffffff10;border:1px solid #ffffff20;border-radius:14px;padding:12px 5px;text-align:center}.num{display:block;color:var(--gold);font-size:clamp(1.7rem,7vw,3rem);font-weight:850;font-variant-numeric:tabular-nums}.caption{font-size:.75rem;letter-spacing:1px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px;margin-top:22px}.level{background:#ffffff0d;border:1px solid #ffffff28;border-radius:17px;padding:18px;text-align:left}.level .emoji{font-size:2rem}.level h3{margin:8px 0;color:var(--gold)}.level p{font-size:.92rem;min-height:48px}.level.done{border-color:#73d7a0;background:#1c573c55}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center}.feedback{min-height:28px;color:#bcebd1;font-weight:700;margin:14px 0}.gamebox{margin-top:20px;background:#ffffff0d;border:1px solid #ffffff28;border-radius:17px;padding:20px}.big{font-size:clamp(1.4rem,4vw,2rem);font-weight:800;color:var(--gold)}.tiles{display:grid;grid-template-columns:repeat(4,minmax(55px,1fr));gap:9px;max-width:430px;margin:20px auto}.tile{min-height:68px;font-size:1.7rem;background:#194b40;color:white;border:1px solid #ffffff30}.tile.matched{background:#276c4d}.choices{display:grid;gap:10px;max-width:520px;margin:18px auto}.choices button{width:100%}
+canvas{display:block;width:100%;max-width:650px;height:auto;background:linear-gradient(#173c54,#2b6657 75%,#173b2d);border:2px solid #ffffff55;border-radius:14px;margin:15px auto;touch-action:none}
+.small{font-size:.85rem;opacity:.7}.admin{position:fixed;left:12px;bottom:12px;width:46px;height:46px;border-radius:50%;padding:0;background:#08151b;color:#fff;border:1px solid #ffffff55;font-size:21px}
+.modal{position:fixed;inset:0;background:#000b;display:grid;place-items:center;padding:18px;z-index:5}.dialog{width:min(420px,100%);background:#102a2b;border:1px solid #ffffff35;border-radius:20px;padding:24px}
+footer{text-align:center;opacity:.55;font-size:.8rem;margin:20px}
+@media(max-width:440px){body{padding:12px}.unit{padding:9px 2px}.caption{font-size:.65rem}.tile{min-height:56px}}
+
+/* Finale Glückwunsch-Einblendung – nur sichtbar nach Abschluss aller fünf Level */
+#victoryPopup{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:18px;background:rgba(2,10,14,.86);overflow:hidden}
+#victoryPopup.hidden{display:none!important}
+#victoryPopup .victory-card{position:relative;z-index:2;width:min(520px,100%);padding:30px 24px;text-align:center;border:2px solid #ffd66b;border-radius:24px;background:linear-gradient(145deg,#174b3b,#102a2b 65%,#3d2635);box-shadow:0 0 35px #ffd66b66,0 20px 70px #0009;animation:victoryPop .65s cubic-bezier(.2,1.5,.4,1) both}
+#victoryPopup h2{font-size:clamp(1.8rem,6vw,2.7rem);color:#ffe28a;margin:8px 0 14px}
+#victoryPopup p{font-size:1.12rem;line-height:1.55}
+#victoryPopup .gift{font-size:3.5rem;animation:giftBounce 1s ease-in-out infinite alternate}
+#victoryPopup .confetti{position:absolute;top:-18px;width:10px;height:16px;opacity:.95;animation:confettiFall var(--fall) linear var(--delay) infinite;left:var(--left);background:var(--color);transform:rotate(var(--turn));}
+@keyframes confettiFall{to{top:110%;transform:translateX(var(--drift)) rotate(900deg)}}
+@keyframes victoryPop{from{opacity:0;transform:scale(.55) translateY(25px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes giftBounce{to{transform:translateY(-9px) rotate(5deg)}}
+</style></head>
+<body><main>
+<section id="locked" class="panel center">
+ <div class="topline">✦ GEHEIME WEIHNACHTSMISSION ✦</div><h1>Operation<br>Weihnachtsmann</h1>
+ <p>Fünf Prüfungen warten auf dich. Das Portal öffnet an Heiligabend um Mitternacht.</p>
+ <div class="timer"><div class="unit"><span class="num" id="d">00</span><span class="caption">TAGE</span></div><div class="unit"><span class="num" id="h">00</span><span class="caption">STUNDEN</span></div><div class="unit"><span class="num" id="m">00</span><span class="caption">MINUTEN</span></div><div class="unit"><span class="num" id="s">00</span><span class="caption">SEKUNDEN</span></div></div>
+ <p id="lockStatus" class="gold">Noch ist das Portal verschlossen …</p>
+</section>
+<section id="home" class="panel hidden">
+ <div class="topline">✦ DIE WEIHNACHTSWELT ✦</div><h1>Deine Mission</h1><p class="center">Schließe alle fünf Level ab und stelle dich am Ende dem Weihnachtsmann!</p>
+ <div id="levels" class="grid"></div>
+ <p class="center small">Dein Fortschritt gilt nur, solange diese Seite geöffnet ist. Beim nächsten Öffnen beginnt die Mission von vorn.</p>
+</section>
+<section id="game" class="panel hidden">
+ <div class="row" style="justify-content:space-between"><button class="secondary" id="back">← Weltkarte</button><span id="progress" class="gold"></span></div>
+ <h1 id="gameTitle" style="font-size:clamp(1.8rem,6vw,2.8rem)"></h1><p id="gameIntro" class="center"></p>
+ <div id="gameContent" class="gamebox"></div><div id="feedback" class="feedback center" aria-live="polite"></div>
+</section>
+<section id="ending" class="panel center hidden"><div class="topline">MISSION ERFÜLLT</div><h1>🎅 Frohe Weihnachten!</h1><p class="big">Du hast den Weihnachtsmann besiegt!</p><p>Alle fünf Prüfungen sind geschafft. Die Weihnachtswelt ist gerettet.</p><button id="again">Zur Weltkarte</button></section>
+<div id="victoryPopup" class="hidden" role="dialog" aria-modal="true" aria-labelledby="victoryTitle">
+ <div id="victoryConfetti" aria-hidden="true"></div>
+ <div class="victory-card"><div class="gift">🎁</div><h2 id="victoryTitle">🎉 Glückwunsch! 🎉</h2>
+ <p><b>Du hast es geschafft!</b><br>Du hast alle 5 Level gemeistert und den Weihnachtsmann besiegt.</p>
+ <p class="gold"><b>Jetzt bekommst du deine Belohnung! 🏆</b></p>
+ <button id="victoryContinue">Weiter</button></div>
+</div>
+<footer>Ein Weihnachtsabenteuer nur für dich.</footer>
+</main>
+<button class="admin" id="adminBtn" title="Admin-Panel">⚙</button>
+<div id="login" class="modal hidden"><div class="dialog"><h2>🔐 Admin-Zugang</h2><p>Admin-Code eingeben:</p><input id="code" type="password" placeholder="Code"><p id="err" style="color:#ff9eaa"></p><div class="row"><button id="loginGo">Anmelden</button><button class="secondary" data-close="login">Abbrechen</button></div></div></div>
+<div id="admin" class="modal hidden"><div class="dialog"><h2>⚙ Admin-Panel</h2><p id="adminInfo"></p><div class="row"><button id="bypass">Portal sofort öffnen</button><button class="secondary" id="restore">Countdown aktivieren</button><button class="secondary" data-close="admin">Schließen</button></div><p class="small">Nur für diesen Browser und dieses Gerät.</p></div></div>
+<script>
+(()=>{
+const unlock=new Date('2026-12-24T00:00:00+01:00').getTime(),$=id=>document.getElementById(id);
+const names=['Der Weihnachtswald','Die Spielzeugfabrik','Das Lebkuchenland','Das Eisverlies','Der Endboss: Weihnachtsmann'];
+const desc=['Durchquere den Wald, überwinde Fallen und sammle fünf Runen.','Finde alle passenden Spielzeug-Paare mit möglichst wenigen Zügen.','Entschlüssle die geheime Backformel ohne Antwort-Auswahl.','Kombiniere fünf Hinweise und knacke das Siegel der vier Elemente.','Besiege den Weihnachtsmann – und danach seine Dämonenform in einer neuen Welt!' ];
+let done=[false,false,false,false,false],level=0,mem=[],moves=0,stars=0,bossStep=0,adminBypass=false;
+// Fortschritt und Admin-Freischaltung existieren nur in diesem geöffneten Tab.
+try{localStorage.removeItem('ow_admin_bypass');localStorage.removeItem('ow_levels_done')}catch(e){}
+// Admin-Freischaltung gilt nur bis zum Neuladen/Schließen dieser Seite und wird nicht gespeichert.
+const isOpen=()=>Date.now()>=unlock||adminBypass;
+const show=id=>$(id).classList.remove('hidden'),hide=id=>$(id).classList.add('hidden');
+function tick(){if(isOpen()){hide('locked');if($('home').classList.contains('hidden')&&$('game').classList.contains('hidden')&&$('ending').classList.contains('hidden'))show('home');return}
+let t=Math.max(0,unlock-Date.now()),dd=Math.floor(t/86400000);t%=86400000;let hh=Math.floor(t/3600000);t%=3600000;let mm=Math.floor(t/60000);t%=60000;
+$('d').textContent=dd;$('h').textContent=String(hh).padStart(2,'0');$('m').textContent=String(mm).padStart(2,'0');$('s').textContent=String(Math.floor(t/1000)).padStart(2,'0')}
+function renderLevels(){$('levels').innerHTML=names.map((n,i)=>`<article class="level ${done[i]?'done':''}"><div class="emoji">${['🌲','🧸','🍪','❄️','🎅'][i]}</div><h3>Level ${i+1}: ${n}</h3><p>${desc[i]}</p><button data-level="${i}">${done[i]?'Nochmal spielen':'Level starten'}</button> ${done[i]?'✓':''}</article>`).join('');document.querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>start(+b.dataset.level))}
+function complete(){done[level]=true;$('feedback').textContent='Level geschafft! Sehr gut!';setTimeout(()=>{hide('game');if(done.every(Boolean)){show('ending');show('victoryPopup');$('victoryConfetti').innerHTML=Array.from({length:90},(_,i)=>`<i class="confetti" style="--left:${(i*37)%100}%;--delay:${-((i*13)%50)/10}s;--fall:${4+(i%6)}s;--turn:${i*29}deg;--drift:${(i%2?1:-1)*(20+(i%70))}px;--color:${['#ffd66b','#ff6685','#70e6b0','#70cfff','#fff1a8','#c59aff'][i%6]}"></i>`).join('')}else{show('home');renderLevels()}},950)}
+function start(i){if(!isOpen())return;level=i;hide('home');hide('ending');show('game');$('gameTitle').textContent=names[i];$('gameIntro').textContent=desc[i];$('feedback').textContent='';$('progress').textContent=`LEVEL ${i+1} / 5`;let c=$('gameContent');c.innerHTML='';
+if(i===0)platformer(c);if(i===1)memory(c);if(i===2)riddle(c);if(i===3)ice(c);if(i===4)boss(c)}
+$('back').onclick=()=>{hide('game');show('home');renderLevels()};$('again').onclick=()=>{hide('ending');show('home');renderLevels()};
+ $('victoryContinue').onclick=()=>hide('victoryPopup');
+function platformer(c){
+ c.innerHTML='<p class="center">Mit <b>A / D</b> oder <b>← / →</b> laufen, mit <b>W</b>, <b>↑</b> oder <b>Leertaste</b> springen. Sammle <b>5 Runen</b>, weiche den Schneestacheln und dem Schneemonster aus und erreiche dann das Portal.</p><canvas id="plat" width="760" height="360"></canvas><div class="row"><button class="secondary" id="left">◀</button><button class="secondary" id="jump">SPRUNG</button><button class="secondary" id="right">▶</button></div><p class="center small" id="starCount">Runen: 0 / 5 · Leben: ♥ ♥ ♥</p>';
+ const cv=$('plat'),ctx=cv.getContext('2d');let x=28,y=270,vx=0,vy=0,on=false,got=[false,false,false,false,false],keys={},lives=3,inv=0,frame=0,ended=false;
+ const base=[{x:0,y:330,w:760,h:30},{x:105,y:278,w:105,h:13},{x:250,y:230,w:95,h:13},{x:405,y:270,w:110,h:13},{x:555,y:215,w:100,h:13},{x:660,y:285,w:75,h:13}];
+ const runes=[{x:145,y:248},{x:285,y:200},{x:455,y:240},{x:600,y:185},{x:700,y:255}];
+ const spikes=[{x:215,y:314,w:42,h:16},{x:365,y:314,w:48,h:16},{x:520,y:314,w:40,h:16},{x:625,y:314,w:35,h:16}];
+ let monster={x:300,y:300,v:2.1};
+ function down(e){let k=e.key.toLowerCase();if(['arrowleft','a'].includes(k))keys.l=true;if(['arrowright','d'].includes(k))keys.r=true;if([' ','arrowup','w'].includes(k)){if(on){vy=-11.5;on=false}}if(['arrowleft','arrowright','arrowup',' '].includes(k))e.preventDefault()}
+ function up(e){let k=e.key.toLowerCase();if(['arrowleft','a'].includes(k))keys.l=false;if(['arrowright','d'].includes(k))keys.r=false}
+ window.addEventListener('keydown',down);window.addEventListener('keyup',up);
+ const bind=(id,k)=>{let b=$(id);b.onpointerdown=e=>{e.preventDefault();keys[k]=true};b.onpointerup=b.onpointerleave=b.onpointercancel=()=>keys[k]=false};bind('left','l');bind('right','r');$('jump').onpointerdown=()=>{if(on){vy=-11.5;on=false}};
+ function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+ function reset(){x=28;y=270;vy=0;inv=90;lives--;if(lives<=0){ended=true;$('feedback').textContent='Der Wald war zu gefährlich. Starte das Level erneut und versuche einen anderen Weg.';let b=document.createElement('button');b.textContent='Level neu starten';b.onclick=()=>start(0);c.appendChild(b)}}
+ function draw(){ctx.clearRect(0,0,760,360);let g=ctx.createLinearGradient(0,0,0,360);g.addColorStop(0,'#153e55');g.addColorStop(1,'#286344');ctx.fillStyle=g;ctx.fillRect(0,0,760,360);
+ ctx.fillStyle='#dff7ff';for(let i=0;i<45;i++){let sx=(i*83+frame*.12)%760,sy=(i*47)%300;ctx.fillRect(sx,sy,2,2)}
+ ctx.fillStyle='#286b4d';base.forEach(p=>{ctx.fillRect(p.x,p.y,p.w,p.h);ctx.fillStyle='#9ad6ae';ctx.fillRect(p.x,p.y,p.w,4);ctx.fillStyle='#286b4d'});
+ // A moving ice platform
+ let mx=335+Math.sin(frame/48)*48;ctx.fillStyle='#a5e7ef';ctx.fillRect(mx,180,85,12);ctx.fillStyle='#e9ffff';ctx.fillRect(mx,180,85,3);
+ spikes.forEach(p=>{ctx.fillStyle='#d9f5fa';for(let xx=p.x;xx<p.x+p.w;xx+=14){ctx.beginPath();ctx.moveTo(xx,p.y+p.h);ctx.lineTo(xx+7,p.y);ctx.lineTo(xx+14,p.y+p.h);ctx.fill()}});
+ runes.forEach((r,i)=>{if(!got[i]){ctx.font='25px serif';ctx.fillText('💎',r.x,r.y)}});
+ ctx.font='32px serif';ctx.fillText('☃️',monster.x,monster.y+18);
+ // little elf character with body, hat and face
+ if(inv===0||frame%8<4){ctx.fillStyle='#c93646';ctx.fillRect(x+5,y+16,20,19);ctx.fillStyle='#f4d2a6';ctx.beginPath();ctx.arc(x+15,y+10,10,0,Math.PI*2);ctx.fill();ctx.fillStyle='#27764f';ctx.beginPath();ctx.moveTo(x+5,y+4);ctx.lineTo(x+15,y-12);ctx.lineTo(x+25,y+4);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(x+7,y+25,7,11);ctx.fillRect(x+18,y+25,7,11);ctx.fillStyle='#20252a';ctx.fillRect(x+11,y+8,2,2);ctx.fillRect(x+18,y+8,2,2)}
+ ctx.fillStyle='#ffd66b';ctx.fillRect(718,270,28,60);ctx.fillStyle='#543c20';ctx.fillRect(735,294,4,5);
+ }
+ function frameLoop(){if(ended||$('game').classList.contains('hidden')||level!==0)return;frame++;let prevY=y;vx=(keys.r?4.1:0)-(keys.l?4.1:0);x=Math.max(0,Math.min(730,x+vx));vy=Math.min(12,vy+.55);y+=vy;on=false;
+ let all=[...base,{x:335+Math.sin(frame/48)*48,y:180,w:85,h:12}];for(let p of all){if(x+28>p.x&&x<p.x+p.w&&prevY+36<=p.y+5&&y+36>=p.y&&vy>=0){y=p.y-36;vy=0;on=true}}
+ if(y>365){reset()}
+ runes.forEach((r,i)=>{if(!got[i]&&Math.abs(x+15-r.x)<25&&Math.abs(y+16-r.y)<25)got[i]=true});
+ monster.x+=monster.v;if(monster.x<265||monster.x>390)monster.v*=-1;
+ let hero={x:x+3,y:y+3,w:25,h:32};if(inv===0&&(spikes.some(p=>overlap(hero,{x:p.x,y:p.y+7,w:p.w,h:p.h-7}))||overlap(hero,{x:monster.x,y:monster.y-15,w:30,h:30}))){reset()}if(inv>0)inv--;
+ $('starCount').textContent=`Runen: ${got.filter(Boolean).length} / 5 · Leben: ${'♥ '.repeat(lives)}`;draw();if(x>700&&got.every(Boolean)){ended=true;window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);complete();return}requestAnimationFrame(frameLoop)}draw();frameLoop();
+}
+function memory(c){const vals=['🎁','⭐','🔔','🧦','🍬','🕯️','🎄','🦌'];let deck=[...vals,...vals].sort(()=>Math.random()-.5);mem=[];moves=0;c.innerHTML='<p class="center">Finde die acht passenden Paare. Wähle immer zwei Karten.</p><p class="center" id="moves">Züge: 0</p><div class="tiles" id="tiles"></div>';let lock=false,matched=0;
+ deck.forEach((v,i)=>{let b=document.createElement('button');b.className='tile';b.textContent='?';b.onclick=()=>{if(lock||b.classList.contains('matched')||mem.includes(i))return;b.textContent=v;mem.push(i);if(mem.length===2){moves++;$('moves').textContent='Züge: '+moves;let [a,d]=mem;if(deck[a]===deck[d]){document.querySelectorAll('.tile')[a].classList.add('matched');document.querySelectorAll('.tile')[d].classList.add('matched');mem=[];matched++;if(matched===8)complete()}else{lock=true;setTimeout(()=>{document.querySelectorAll('.tile')[a].textContent='?';document.querySelectorAll('.tile')[d].textContent='?';mem=[];lock=false},750)}}};$('tiles').appendChild(b)})}
+function question(c,q,opts,correct,success){c.innerHTML=`<p class="center big">${q}</p><div class="choices">${opts.map((o,i)=>`<button data-choice="${i}">${o}</button>`).join('')}</div>`;document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{if(+b.dataset.choice===correct){$('feedback').textContent='Richtig!';success()}else $('feedback').textContent='Noch nicht ganz – versuch es nochmal.'})}
+function riddle(c){
+ const stages=[
+  {q:'Die Bäcker haben drei Kisten. Auf dem Schild steht: „Die richtige Zutat ist in einer Kiste, und genau ein Schild ist wahr.“<br><br>Kiste A: „Die Zutat ist in B.“<br>Kiste B: „Die Zutat ist nicht in B.“<br>Kiste C: „Die Zutat ist nicht in A.“<br><br>In welcher Kiste liegt die geheime Zutat?',a:['A','B','C'],hint:'Prüfe für jede Kiste, ob genau eine Aussage wahr wäre.',answer:'A'},
+  {q:'Ein magischer Ofen backt doppelt so viele Kekse wie der vorherige Durchgang. Nach drei Durchgängen liegen 40 Kekse im Ofen. Wie viele waren vor dem ersten Durchgang darin?',a:['5','10','20'],hint:'Arbeite rückwärts: teile dreimal durch 2.',answer:'5'},
+  {q:'Letzter Schritt: Der Code besteht aus den Buchstaben-Anfangswerten der Wörter „Schnee“, „Tanne“, „Stern“ – aber in alphabetischer Reihenfolge der Wörter. Gib die drei Buchstaben ohne Leerzeichen ein.',a:['SST','STS','TSS'],hint:'Sortiere die Wörter alphabetisch: Schnee, Stern, Tanne.',answer:'SST'}
+ ];let n=0;
+ function showStage(){let z=stages[n];c.innerHTML=`<p class="center small">GEHEIME BACKFORMEL · AUFGABE ${n+1}/3</p><p class="center big">${z.q}</p><div class="row"><input id="riddleAnswer" autocomplete="off" placeholder="Deine Lösung" style="width:min(320px,100%)"><button id="checkRiddle">Prüfen</button></div><p class="center small" id="riddleHint">Tipp gibt es nur auf Anfrage.</p><div class="row"><button class="secondary" id="showHint">Tipp anzeigen</button></div>`;$('showHint').onclick=()=>$('riddleHint').textContent=z.hint;$('checkRiddle').onclick=()=>{let v=$('riddleAnswer').value.trim().toUpperCase().replace(/\s/g,'');if(v===z.answer){n++;if(n===stages.length)complete();else{$('feedback').textContent='Das Siegel öffnet sich …';setTimeout(showStage,550)}}else $('feedback').textContent='Das stimmt noch nicht. Lies die Hinweise genau und probiere es erneut.'};$('riddleAnswer').addEventListener('keydown',e=>{if(e.key==='Enter')$('checkRiddle').click()})}showStage();
+}
+function ice(c){
+ const clues=[
+  'Der Frostkristall steht unmittelbar vor dem Sonnenkristall.',
+  'Der Flammenkristall kommt irgendwo vor dem Mondkristall.',
+  'Der Sonnenkristall steht nicht an letzter Stelle.',
+  'Der Flammenkristall steht nicht an erster Stelle.',
+  'Der Mondkristall steht nicht an erster Stelle.'
+ ];
+ const runes=[{name:'Frost',num:'4',color:'#9cecff'},{name:'Sonne',num:'1',color:'#ffe27a'},{name:'Flamme',num:'3',color:'#ff9a68'},{name:'Mond',num:'2',color:'#c8b6ff'}];
+ c.innerHTML=`<div style="max-width:650px;margin:auto">
+ <p class="center small">DAS SIEGEL DER VIER ELEMENTE · LOGIKPRÜFUNG</p>
+ <p class="center">Die vier Runen müssen in die richtige Reihenfolge gebracht werden. Du bekommst keinen Weg vorgegeben: Kombiniere alle Hinweise und gib den vierstelligen Zahlencode ein.</p>
+ <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:18px 0">
+ ${runes.map(r=>`<div style="background:#ffffff12;border:1px solid ${r.color};border-radius:12px;padding:12px 4px;text-align:center"><div style="font-size:1.6rem;color:${r.color};font-weight:900">${r.num}</div><b>${r.name}</b></div>`).join('')}
+ </div>
+ <div style="background:#06191f;border:1px solid #83cbd5;border-radius:14px;padding:16px"><h3 style="margin:0 0 10px;color:#ffe27a">Die Inschrift</h3><ol style="line-height:1.8;margin:0;padding-left:22px">${clues.map(x=>`<li>${x}</li>`).join('')}</ol></div>
+ <p class="center" style="margin-top:18px">Trage die Zahlen in der Reihenfolge von Platz 1 bis Platz 4 ein.</p>
+ <div class="row"><input id="iceCode" inputmode="numeric" maxlength="4" placeholder="z. B. 1234" style="width:170px;text-align:center;letter-spacing:7px;font-size:1.35rem"><button id="iceCheck">Siegel öffnen</button></div>
+ <p class="center small" id="iceHint">Das Siegel hat mehrere Hinweise. Du kannst dir einen Tipp nach dem anderen anzeigen lassen.</p>
+ <div class="row"><button class="secondary" id="iceHintBtn">Tipp anzeigen</button></div>
+ <div id="runeSlots" class="row" style="margin-top:18px;gap:7px"></div>
+ </div>`;
+ let hint=0;const hints=[
+  'Beginne mit Hinweis 1: Frost und Sonne müssen direkt nebeneinander stehen – in genau dieser Reihenfolge.',
+  'Wenn Frost direkt vor Sonne steht, kann das Paar nicht auf Platz 4 beginnen. Nutze auch den Hinweis, dass Sonne nicht ganz hinten stehen darf.',
+  'Flamme muss vor Mond stehen. Prüfe die möglichen Plätze für das Paar Frost–Sonne und streiche jede Reihenfolge, die eine der fünf Regeln verletzt.'
+ ];
+ $('iceHintBtn').onclick=()=>{$('iceHint').textContent=hints[Math.min(hint,hints.length-1)];hint=Math.min(hint+1,hints.length-1)};
+ $('iceCheck').onclick=()=>{const v=$('iceCode').value.replace(/\s/g,'');if(v==='4132'){ $('feedback').textContent='Das Siegel zerbricht – du hast die vier Runen richtig kombiniert!';complete()}else{$('feedback').textContent='Falscher Code. Prüfe jede der fünf Aussagen einzeln.';$('iceCode').focus()}};
+ $('iceCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('iceCheck').click()});
+ $('runeSlots').innerHTML='<span class="small">Vier Runen. Ein Code. Nur die richtige Reihenfolge öffnet das Siegel.</span>';
+}
+
+function boss(c){
+ c.innerHTML=`
+ <p class="center"><b>STEUERUNG:</b> W A S D oder Pfeiltasten = bewegen · Leertaste = Sternenschuss · E = Frostkanone · Q = Eisschild. Im Dämonenraum zusätzlich: Rechtsklick = Raketen (alle 10 Sekunden) · Linksklick = +1 Leben (alle 5 Sekunden). Weiche Angriffen aus und schieße, wenn das Boss-Schild offen ist!</p>
+ <canvas id="bossCanvas" width="760" height="410" style="max-width:760px"></canvas>
+ <div class="row"><button class="secondary" id="bLeft">A ◀</button><button class="secondary" id="bUp">W ▲</button><button class="secondary" id="bDown">S ▼</button><button class="secondary" id="bRight">D ▶</button></div><div class="row"><button id="bShoot">✦ STERNENSCHUSS</button><button id="bCannon">❄ FROSTKANONE (E)</button><button id="bGuard">🛡 EISSCHILD (Q)</button></div>
+ <p class="center" id="bossHud">Energie: 5 · Weihnachtsmann: 48 · Form 1/2</p><p class="center small" id="bossItem">Achte auf das Leuchten seines Schildes – nur dann kannst du Schaden verursachen.</p>`;
+ const cv=$('bossCanvas'),ctx=cv.getContext('2d'),W=760,H=410,keys={};
+ let player={x:82,y:190,w:34,h:48,hp:8,maxHp:8,inv:0,shield:0,rapid:0,guardCooldown:0,rocketCooldown:0,healCooldown:0};
+ let santa={x:650,y:170,w:78,h:96,hp:36,maxHp:36,flash:0,form:1};
+ let shots=[],enemy=[],items=[],particles=[],frame=0,shootWait=0,cannonWait=0,ended=false,nextDrop=3200,nextHeal=600,phaseFlash=0,transforming=0,introState='opening',introFrame=0,shieldBreak=0;
+ const down=e=>{let k=e.key.toLowerCase();if(['w','a','s','d',' ','arrowup','arrowdown','arrowleft','arrowright','e','q','enter'].includes(k))e.preventDefault();if(k==='enter'&&(introState==='opening'||introState==='demonIntro'))introState='playing';if(k==='e'&&!e.repeat)fireCannon();if(k==='q'&&!e.repeat)activateGuard();keys[k]=true};
+ const up=e=>keys[e.key.toLowerCase()]=false;
+ window.addEventListener('keydown',down);window.addEventListener('keyup',up);
+ const bind=(id,k)=>{const b=$(id);b.onpointerdown=e=>{e.preventDefault();keys[k]=true};b.onpointerup=b.onpointerleave=b.onpointercancel=()=>keys[k]=false};
+ bind('bLeft','a');bind('bRight','d');bind('bUp','w');bind('bDown','s');
+ $('bShoot').onpointerdown=e=>{e.preventDefault();keys[' ']=true};$('bShoot').onpointerup=$('bShoot').onpointerleave=$('bShoot').onpointercancel=()=>keys[' ']=false;
+ $('bCannon').onclick=fireCannon;$('bGuard').onclick=activateGuard;cv.addEventListener('contextmenu',e=>e.preventDefault());cv.addEventListener('mousedown',e=>{if(introState==='opening'||introState==='demonIntro'){introState='playing';return}if(e.button===2)fireRocket();if(e.button===0)healClick()});
+ function fireCannon(){if(ended||cannonWait>0)return;cannonWait=38;shots.push({x:player.x+31,y:player.y+16,w:34,h:22,vx:11,damage:3,big:true});burst(player.x+30,player.y+22,'#9ff7ff',16)}
+ function activateGuard(){if(ended||player.guardCooldown>0)return;player.shield=120;player.guardCooldown=300;burst(player.x+17,player.y+24,'#8deaff',24)}
+ function fireRocket(){if(ended||introState!=='playing'||santa.form!==2||player.rocketCooldown>0)return;player.rocketCooldown=600;shots.push({x:player.x+30,y:player.y+12,w:32,h:15,vx:9,damage:shieldOpen()?8:1,rocket:true});shots.push({x:player.x+30,y:player.y+30,w:32,h:15,vx:9,damage:shieldOpen()?8:1,rocket:true});burst(player.x+28,player.y+20,'#ffad55',20);$('bossItem').textContent='Doppelraketen abgefeuert! Wieder bereit in 10 Sekunden.'}
+ function healClick(){if(ended||introState!=='playing'||santa.form!==2||player.healCooldown>0||player.hp>=player.maxHp)return;player.healCooldown=300;player.hp=Math.min(player.maxHp,player.hp+1);burst(player.x+16,player.y+20,'#83ffbd',18);$('bossItem').textContent='Lichtheilung: +1 Leben. Wieder bereit in 5 Sekunden.'}
+ function cleanup(){window.removeEventListener('keydown',down);window.removeEventListener('keyup',up)}
+ function hit(a,b){return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y}
+ function burst(x,y,color,n=12){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,v=1+Math.random()*3;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:22+Math.random()*22,color,size:2+Math.random()*4})}}
+ function rounded(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+ function star(x,y,r,color){ctx.save();ctx.translate(x,y);ctx.rotate(frame*.035);ctx.fillStyle=color;ctx.beginPath();for(let i=0;i<10;i++){let a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.43:r;ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}ctx.closePath();ctx.fill();ctx.restore()}
+ function drawHero(x,y){
+  ctx.save();ctx.translate(x,y);ctx.fillStyle='#172c3d';ctx.beginPath();ctx.ellipse(17,45,17,5,0,0,Math.PI*2);ctx.fill();
+  rounded(2,18,30,27,9,'#b92f43');rounded(7,22,20,22,5,'#e64b58');
+  ctx.fillStyle='#f0c39c';ctx.beginPath();ctx.arc(17,13,12,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(13,13,1.6,0,Math.PI*2);ctx.arc(21,13,1.6,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#7d3d35';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(17,17,4,.15,Math.PI-.15);ctx.stroke();
+  ctx.fillStyle='#f2f4f7';ctx.beginPath();ctx.moveTo(3,7);ctx.lineTo(9,-5);ctx.quadraticCurveTo(18,-13,27,-4);ctx.lineTo(31,7);ctx.closePath();ctx.fill();
+  rounded(2,4,30,6,3,'#b92f43');ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(27,-5,5,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#f7d77b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(17,24);ctx.lineTo(17,39);ctx.stroke();rounded(-1,42,13,5,2,'#263d53');rounded(20,42,13,5,2,'#263d53');
+  if(player.shield>0){ctx.strokeStyle=`rgba(114,225,255,${.45+.2*Math.sin(frame/5)})`;ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(16,22,27,34,0,0,Math.PI*2);ctx.stroke()}ctx.restore();
+ }
+ function drawSanta(){
+  ctx.save();ctx.translate(santa.x,santa.y);const bob=Math.sin(frame/7)*2;ctx.translate(0,bob);
+  if(santa.form===1){
+   // Santa, hand-drawn rather than emoji.
+   ctx.fillStyle='#172b3b';ctx.beginPath();ctx.ellipse(39,89,39,8,0,0,Math.PI*2);ctx.fill();
+   rounded(5,34,68,52,18,'#8e172b');rounded(13,40,52,43,13,'#d52d3d');
+   ctx.fillStyle='#f5e8df';ctx.beginPath();ctx.moveTo(17,40);ctx.lineTo(39,64);ctx.lineTo(57,40);ctx.lineTo(51,79);ctx.lineTo(26,79);ctx.closePath();ctx.fill();
+   rounded(9,73,60,8,3,'#263746');rounded(34,72,13,11,2,'#f3c65e');
+   ctx.strokeStyle='#b52336';ctx.lineWidth=14;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(11,49);ctx.lineTo(-2,68+Math.sin(frame/8)*6);ctx.moveTo(67,49);ctx.lineTo(80,65-Math.sin(frame/8)*6);ctx.stroke();
+   ctx.fillStyle='#efbd91';ctx.beginPath();ctx.arc(39,25,25,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(30,24,2.7,0,Math.PI*2);ctx.arc(48,24,2.7,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#f5f1e9';ctx.beginPath();ctx.moveTo(15,32);ctx.quadraticCurveTo(17,63,39,64);ctx.quadraticCurveTo(61,62,63,32);ctx.quadraticCurveTo(49,45,39,39);ctx.quadraticCurveTo(28,45,15,32);ctx.fill();
+   ctx.fillStyle='#a91f32';ctx.beginPath();ctx.moveTo(14,9);ctx.lineTo(23,-17);ctx.quadraticCurveTo(42,-26,57,-7);ctx.lineTo(66,9);ctx.closePath();ctx.fill();rounded(10,6,58,9,5,'#f4f0e8');ctx.fillStyle='#f4f0e8';ctx.beginPath();ctx.arc(58,-10,7,0,Math.PI*2);ctx.fill();
+  }else{
+   // Demonic winter king: horns, ragged wings, obsidian armor and glowing runes.
+   ctx.shadowBlur=28;ctx.shadowColor='#ff315e';ctx.fillStyle='rgba(255,35,75,.22)';ctx.beginPath();ctx.ellipse(39,48,76,76,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+   ctx.fillStyle='#24142f';ctx.beginPath();ctx.moveTo(14,39);ctx.lineTo(-45,4+Math.sin(frame/8)*8);ctx.lineTo(-28,55);ctx.lineTo(-55,75);ctx.lineTo(8,76);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(64,39);ctx.lineTo(122,4-Math.sin(frame/8)*8);ctx.lineTo(105,55);ctx.lineTo(133,75);ctx.lineTo(70,76);ctx.closePath();ctx.fill();
+   ctx.strokeStyle='#9b315b';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(8,50);ctx.lineTo(-30,20);ctx.moveTo(70,50);ctx.lineTo(112,20);ctx.stroke();
+   ctx.fillStyle='#171321';ctx.beginPath();ctx.moveTo(8,34);ctx.lineTo(16,14);ctx.lineTo(62,14);ctx.lineTo(72,36);ctx.lineTo(66,88);ctx.lineTo(14,88);ctx.closePath();ctx.fill();
+   ctx.fillStyle='#5b2348';ctx.beginPath();ctx.moveTo(18,37);ctx.lineTo(39,52);ctx.lineTo(61,37);ctx.lineTo(56,80);ctx.lineTo(22,80);ctx.closePath();ctx.fill();
+   ctx.strokeStyle='#e34c78';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(39,49);ctx.lineTo(39,79);ctx.moveTo(19,58);ctx.lineTo(30,68);ctx.moveTo(59,58);ctx.lineTo(48,68);ctx.stroke();
+   ctx.fillStyle='#a95e70';ctx.beginPath();ctx.moveTo(17,23);ctx.lineTo(11,-7);ctx.lineTo(31,10);ctx.lineTo(39,4);ctx.lineTo(48,10);ctx.lineTo(68,-7);ctx.lineTo(61,25);ctx.arc(39,28,23,0,Math.PI);ctx.fill();
+   ctx.fillStyle='#ff315e';ctx.shadowBlur=13;ctx.shadowColor='#ff315e';ctx.beginPath();ctx.moveTo(21,26);ctx.lineTo(34,30);ctx.lineTo(29,35);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(57,26);ctx.lineTo(44,30);ctx.lineTo(49,35);ctx.closePath();ctx.fill();ctx.shadowBlur=0;
+   ctx.fillStyle='#211324';ctx.beginPath();ctx.moveTo(17,36);ctx.quadraticCurveTo(39,62,61,36);ctx.lineTo(55,61);ctx.lineTo(39,71);ctx.lineTo(23,61);ctx.closePath();ctx.fill();
+   ctx.fillStyle='#f4d6d7';ctx.beginPath();ctx.moveTo(27,50);ctx.lineTo(32,61);ctx.lineTo(36,52);ctx.moveTo(42,52);ctx.lineTo(47,61);ctx.lineTo(51,50);ctx.fill();
+   // Curved demon horns
+   ctx.strokeStyle='#ded0c8';ctx.lineWidth=8;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(22,14);ctx.quadraticCurveTo(0,-8,8,-28);ctx.moveTo(56,14);ctx.quadraticCurveTo(78,-8,70,-28);ctx.stroke();
+   ctx.strokeStyle='#a7f4ff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(39,48,48,frame/20,frame/20+Math.PI*1.35);ctx.stroke();
+  }
+  if(santa.flash>0){ctx.strokeStyle='#fff3a5';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(39,45,53,58,0,0,Math.PI*2);ctx.stroke()}ctx.restore();
+ }
+ function shieldOpen(){return santa.form===1?(frame%210)<54:(shieldBreak>0||(frame%300)>=180)}
+ function draw(){
+  ctx.clearRect(0,0,W,H);
+  if(santa.form===1){
+   let g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#071426');g.addColorStop(.62,'#14263d');g.addColorStop(1,'#090f1c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+   ctx.fillStyle='rgba(235,245,255,.9)';ctx.beginPath();ctx.arc(665,55,23,0,Math.PI*2);ctx.fill();ctx.fillStyle='#091629';ctx.beginPath();ctx.arc(674,47,21,0,Math.PI*2);ctx.fill();
+   for(let i=0;i<45;i++){ctx.fillStyle='rgba(240,248,255,.7)';ctx.fillRect((i*139+19)%W,(i*47+7)%175,2,2)}
+   // Snowy houses on both sides of the street; windows flicker and silhouettes appear occasionally.
+   for(let h=0;h<6;h++){let bx=h*142-18,bh=112+(h%3)*24,by=316-bh;ctx.fillStyle=h%2?'#192b42':'#26334a';ctx.fillRect(bx,by,126,bh);ctx.fillStyle='#0a1425';ctx.beginPath();ctx.moveTo(bx-8,by+3);ctx.lineTo(bx+62,by-36);ctx.lineTo(bx+134,by+3);ctx.closePath();ctx.fill();
+    for(let wy=0;wy<2;wy++)for(let wx=0;wx<2;wx++){let lit=((Math.floor(frame/100)+h*3+wx*2+wy)%8)<3,xx=bx+17+wx*70,yy=by+18+wy*48;ctx.fillStyle=lit?'#ffd98a':'#101c2d';ctx.fillRect(xx,yy,19,25);if(lit){ctx.fillStyle='rgba(255,205,105,.12)';ctx.fillRect(xx-5,yy-5,29,35);if((frame+h*37+wx*29+wy*11)%510<95){ctx.fillStyle='#283247';ctx.beginPath();ctx.arc(xx+9,yy+9,4,0,Math.PI*2);ctx.fill();ctx.fillRect(xx+5,yy+13,8,12)}}}
+    ctx.fillStyle='#0b1728';ctx.fillRect(bx+48,by+bh-48,29,48);
+   }
+   ctx.fillStyle='#272e3b';ctx.fillRect(0,330,W,80);ctx.fillStyle='#8b8b91';ctx.fillRect(0,325,W,6);ctx.fillStyle='#d9c58d';for(let x=25;x<W;x+=120)ctx.fillRect(x,370,54,3);
+   for(let lx=65;lx<W;lx+=220){ctx.strokeStyle='#586477';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(lx,326);ctx.lineTo(lx,175);ctx.lineTo(lx+22,165);ctx.stroke();ctx.fillStyle='#ffe5a4';ctx.shadowBlur=22;ctx.shadowColor='#ffd47a';ctx.beginPath();ctx.arc(lx+22,165,7,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
+  }else{
+   // New world: the shattered underworld forge.
+   let g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#170d2b');g.addColorStop(.55,'#46203e');g.addColorStop(1,'#170c18');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+   for(let i=0;i<7;i++){let x=i*125-20;ctx.fillStyle='#29142e';ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+38,0);ctx.lineTo(x+24,250);ctx.lineTo(x-12,250);ctx.closePath();ctx.fill();ctx.strokeStyle='#8c365e';ctx.lineWidth=2;ctx.stroke();}
+   ctx.strokeStyle='#ff4b58';ctx.lineWidth=3;ctx.globalAlpha=.55;for(let i=0;i<5;i++){let x=i*170+35;ctx.beginPath();ctx.moveTo(x,365);ctx.lineTo(x+18,385+Math.sin(frame/9+i)*9);ctx.lineTo(x+45,410);ctx.stroke()}ctx.globalAlpha=1;
+   ctx.fillStyle='#211020';ctx.fillRect(0,365,W,45);ctx.fillStyle='#a93350';ctx.fillRect(0,361,W,5);
+   ctx.fillStyle='rgba(255,80,80,.16)';ctx.beginPath();ctx.ellipse(600,210,150,155,0,0,Math.PI*2);ctx.fill();
+  }
+  for(let i=0;i<55;i++){let sx=(i*137+frame*(.25+(i%3)*.13))%W,sy=(i*61+frame*(.35+(i%4)*.12))%350;ctx.fillStyle=santa.form===2?(i%3?'#ffb16c':'#ff4f79'):(i%5===0?'#a8f3ff':'#e7f7ff');ctx.globalAlpha=.25+(i%4)*.13;ctx.fillRect(sx,sy,2+(i%2),2+(i%2))}ctx.globalAlpha=1;
+  ctx.fillStyle='#fff';ctx.font='bold 15px system-ui';ctx.fillText(santa.form===1?'FORM 1 · DER GESCHENKEWÄCHTER':'FORM 2 · DER DÄMONENKÖNIG',245,22);
+  if(!shieldOpen()){ctx.strokeStyle=santa.form===1?'rgba(130,235,255,.65)':'rgba(255,80,120,.7)';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(santa.x+39,santa.y+47,59+Math.sin(frame/6)*3,66+Math.cos(frame/7)*3,0,0,Math.PI*2);ctx.stroke();}
+  drawSanta();if(player.inv===0||frame%7<4)drawHero(player.x,player.y);
+  shots.forEach(o=>{if(o.rocket){ctx.fillStyle='#ffbd68';ctx.shadowBlur=16;ctx.shadowColor='#ff813d';ctx.fillRect(o.x,o.y,o.w,o.h);ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.fillRect(o.x+5,o.y+4,12,3)}else if(o.big){ctx.fillStyle='#c8ffff';ctx.shadowBlur=18;ctx.shadowColor='#65eaff';ctx.fillRect(o.x,o.y,o.w,o.h);ctx.shadowBlur=0}else{star(o.x,o.y,10,'#a7f4ff');ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(o.x,o.y,5,0,Math.PI*2);ctx.stroke()}});
+  enemy.forEach(o=>{if(o.type==='orb'||o.type==='fire'){ctx.fillStyle=o.type==='fire'?'#ff713d':'#ffb6e1';ctx.shadowBlur=12;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(o.x,o.y,o.r||10,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#fff0fb';ctx.lineWidth=2;ctx.stroke()}else if(o.type==='ice'){ctx.fillStyle='#b8f7ff';ctx.beginPath();ctx.moveTo(o.x,o.y-13);ctx.lineTo(o.x+10,o.y+9);ctx.lineTo(o.x,o.y+5);ctx.lineTo(o.x-10,o.y+9);ctx.closePath();ctx.fill()}else if(o.type==='meteor'){ctx.fillStyle='#ff8a55';ctx.shadowBlur=16;ctx.shadowColor='#ff452f';ctx.beginPath();ctx.arc(o.x,o.y,o.r||13,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#ffd28a';ctx.stroke()}else{rounded(o.x,o.y,o.w,o.h,7,'#ff5b70')}});
+  items.forEach(o=>{ctx.save();ctx.shadowBlur=18;ctx.shadowColor='#ffe78b';ctx.fillStyle='#ffe78b';ctx.beginPath();ctx.arc(o.x,o.y,13+Math.sin(frame/5)*2,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#183347';ctx.font='bold 14px system-ui';ctx.textAlign='center';ctx.fillText(o.kind==='heal'?'+':o.kind==='shield'?'S':'✦',o.x,o.y+5);ctx.textAlign='left';ctx.restore()});
+  particles.forEach(o=>{ctx.globalAlpha=Math.max(0,o.life/40);ctx.fillStyle=o.color;ctx.fillRect(o.x,o.y,o.size,o.size)});ctx.globalAlpha=1;
+  const max=santa.maxHp;rounded(490,37,235,15,7,'#371b2b');rounded(490,37,235*(santa.hp/max),15,7,santa.form===2?'#ff416d':'#f05b65');ctx.fillStyle='#fff';ctx.font='12px system-ui';ctx.fillText(santa.form===2?'DÄMONENKÖNIG':'WEIHNACHTSMANN',490,32);
+  rounded(24,37,155,13,6,'#142b38');rounded(24,37,155*(player.hp/player.maxHp),13,6,'#65e2ad');ctx.fillText('DEINE ENERGIE',24,32);
+  ctx.font='bold 12px system-ui';ctx.fillStyle=shieldOpen()?'#aaffd4':'#ffe58b';ctx.fillText(shieldOpen()?'SCHILD OFFEN – JETZT ANGREIFEN!':'SCHILD AKTIV – AUSWEICHEN!',250,390);
+  if(phaseFlash>0){ctx.fillStyle=`rgba(255,255,255,${phaseFlash/50})`;ctx.fillRect(0,0,W,H);phaseFlash--;}
+  if(introState==='opening'||introState==='demonIntro'){ctx.fillStyle='rgba(3,9,20,.88)';ctx.fillRect(48,55,664,300);ctx.textAlign='center';ctx.fillStyle=introState==='opening'?'#ffe3a0':'#ff9eb8';ctx.font='bold 27px system-ui';ctx.fillText(introState==='opening'?'OPERATION WEIHNACHTSMANN':'DÄMONENFESTUNG – NEUE AUSRÜSTUNG',W/2,94);ctx.fillStyle='#fff';ctx.font='17px system-ui';let lines=introState==='opening'?['Der Weihnachtsmann bewacht den Ausgang der Winterstraße.','Bewege dich mit W A S D oder den Pfeiltasten.','Leertaste: Sternenschuss · E: Frostkanone · Q: Eisschild.','Weiche seinen Geschossen aus. Sein Schild muss offen sein,','damit deine Treffer Schaden verursachen.','Besiege ihn – doch das ist noch nicht das Ende …']:['Du bist in die Dämonenfestung gestürzt. Der Boss ist erwacht!','RECHTSKLICK: Doppelraketen – alle 10 Sekunden, hoher Schaden.','LINKSKLICK: Lichtheilung – alle 5 Sekunden +1 Leben.','Leertaste: Sternenschuss · E: Frostkanone · Q: Eisschild.','Das Dämonenschild öffnet sich für kurze Zeit. Nutze das Fenster!'];lines.forEach((t,i)=>ctx.fillText(t,W/2,137+i*29));ctx.fillStyle='#ffe3a0';ctx.font='bold 16px system-ui';ctx.fillText('ENTER oder KLICK zum Starten',W/2,328);ctx.textAlign='left';}
+  if(introState==='falling'){ctx.fillStyle='rgba(5,2,14,.82)';ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.fillStyle='#ffb8c6';ctx.font='bold 29px system-ui';ctx.fillText(introFrame<65?'DER WEIHNACHTSMANN FÄLLT …':introFrame<145?'DIE MAGIE VERWANDELT IHN!':'DER BODEN ZERBRICHT!',W/2,150);ctx.fillStyle='#fff';ctx.font='18px system-ui';ctx.fillText(introFrame<65?'Seine Kräfte schwinden. Doch dunkle Magie erwacht.':introFrame<145?'Flammen steigen aus den Rissen.':'Du stürzt hinab in die Dämonenfestung …',W/2,195);ctx.textAlign='left';}
+
+ }
+ function finishLoss(){ended=true;cleanup();$('feedback').textContent='Der Dämonenkönig war zu stark. Versuche den Kampf erneut!';const b=document.createElement('button');b.textContent='Bosskampf erneut starten';b.onclick=()=>start(4);$('gameContent').appendChild(b)}
+ function finishWin(){ended=true;cleanup();burst(santa.x+39,santa.y+45,'#ffe58b',65);complete()}
+ function awakenDemon(){santa.form=2;santa.hp=54;santa.maxHp=54;santa.x=640;santa.y=150;santa.flash=70;player.hp=Math.min(5,player.hp+1);player.inv=140;shots=[];enemy=[];items=[];nextDrop=frame+3400;phaseFlash=50;burst(santa.x+39,santa.y+45,'#ff3d75',90);$('feedback').textContent='UNMÖGLICH! Der Weihnachtsmann erwacht als DÄMONENKÖNIG. Eine neue Welt öffnet sich!';$('bossItem').textContent='Zweite Form: neue Arena, Feuerstürme, Meteore und ein stärkeres Schutzschild!';}
+ function spawnAim(type='orb',speed=4.1){let sx=santa.x+5,sy=santa.y+45,dx=player.x+16-sx,dy=player.y+20-sy,d=Math.hypot(dx,dy)||1;enemy.push({type,x:sx,y:sy,vx:dx/d*speed,vy:dy/d*speed,w:20,h:20,r:type==='fire'?12:9})}
+ function spawnRare(){let kinds=['heal','shield','rapid'],kind=kinds[Math.floor(Math.random()*kinds.length)];items.push({x:240+Math.random()*270,y:90+Math.random()*210,w:26,h:26,kind});$('bossItem').textContent='SELTENES RELIKT! Ein Lichtkern ist erschienen – schnapp ihn dir!';nextDrop=frame+3900+Math.floor(Math.random()*2300)}
+ function loop(){
+  if(ended)return;frame++;const speed=player.rapid>0?4.7:3.65;
+  if(keys.a||keys.arrowleft)player.x-=speed;if(keys.d||keys.arrowright)player.x+=speed;if(keys.w||keys.arrowup)player.y-=speed;if(keys.s||keys.arrowdown)player.y+=speed;
+  player.x=Math.max(8,Math.min(495,player.x));player.y=Math.max(65,Math.min(315,player.y));
+  if(introState==='falling'){introFrame++;if(introFrame>210){introState='demonIntro';}draw();requestAnimationFrame(loop);return;}if(introState==='opening'||introState==='demonIntro'){draw();requestAnimationFrame(loop);return;}if(player.inv>0)player.inv--;if(player.shield>0)player.shield--;if(player.rapid>0)player.rapid--;if(player.guardCooldown>0)player.guardCooldown--;if(player.rocketCooldown>0)player.rocketCooldown--;if(player.healCooldown>0)player.healCooldown--;if(cannonWait>0)cannonWait--;if(shieldBreak>0)shieldBreak--;
+  if(shootWait>0)shootWait--;if(keys[' ']&&shootWait===0){shots.push({x:player.x+33,y:player.y+22,w:15,h:15,vx:8.5});shootWait=player.rapid>0?9:18}
+  if(santa.form===1){santa.x=625+Math.sin(frame/71)*35;santa.y=158+Math.sin(frame/39)*54;
+   if(frame%92===0)spawnAim('orb',4.0);
+   if(frame%178===0){for(let j=0;j<6;j++)enemy.push({type:'ice',x:420+j*55,y:-18-Math.random()*35,vx:-.4,vy:3.1+Math.random()*.5,w:17,h:23})}
+   if(frame%255===0){for(let a=-2;a<=2;a++)enemy.push({type:'orb',x:santa.x,y:santa.y+45,vx:-4.2,vy:a*1.15,w:18,h:18,r:9})}
+  }else{
+   santa.x=610+Math.sin(frame/27)*82;santa.y=170+Math.cos(frame/21)*75;
+   if(frame%145===0){spawnAim('fire',3.5);enemy.push({type:'fire',x:santa.x,y:santa.y+42,vx:-3.4,vy:0,w:22,h:22,r:11})}
+   
+   if(frame%360===0){for(let a=-1;a<=1;a++)enemy.push({type:'fire',x:santa.x+35,y:santa.y+48,vx:-2.8,vy:a*1.1,w:20,h:20,r:10})}
+   
+  }
+  if(frame>=nextHeal&&!items.some(it=>it.kind==='heal')){items.push({x:190+Math.random()*190,y:110+Math.random()*175,w:28,h:28,kind:'heal'});nextHeal=frame+600;}if(frame>=nextDrop&&!items.some(it=>it.kind!=='heal'))spawnRare();
+  shots.forEach(o=>o.x+=o.vx);enemy.forEach(o=>{o.x+=o.vx;o.y+=o.vy});items.forEach(o=>{o.y+=Math.sin(frame/11)*.45;o.x+=Math.sin(frame/17)*.35});particles.forEach(o=>{o.x+=o.vx;o.y+=o.vy;o.vy+=.025;o.life--});particles=particles.filter(o=>o.life>0);
+  shots=shots.filter(o=>o.x<W+20);enemy=enemy.filter(o=>o.x>-70&&o.x<W+70&&o.y>-55&&o.y<H+40);
+  for(let i=shots.length-1;i>=0;i--){if(hit(shots[i],{x:santa.x,y:santa.y,w:78,h:96})){let o=shots.splice(i,1)[0];if(shieldOpen()||(o.rocket&&santa.form===2)){santa.hp=Math.max(0,santa.hp-(o.damage||1));santa.flash=8;burst(o.x,o.y,santa.form===2?'#ff79a2':'#baf6ff',o.rocket?24:6);if(o.rocket&&santa.form===2){shieldBreak=120;$('bossItem').textContent='Raketen-Treffer! Schild für 2 Sekunden gebrochen.';}if(santa.hp<=0){if(santa.form===1){awakenDemon()}else{draw();finishWin();return}}}else{burst(o.x,o.y,'#8d9cae',3)}}}
+  for(let i=items.length-1;i>=0;i--){if(hit(player,items[i])){let it=items.splice(i,1)[0];if(it.kind==='heal')player.hp=Math.min(player.maxHp,player.hp+2);if(it.kind==='shield')player.shield=600;if(it.kind==='rapid')player.rapid=600;burst(it.x,it.y,'#ffe58b',24);$('bossItem').textContent=it.kind==='heal'?'Lebenskern eingesammelt: +2 Energie!':it.kind==='shield'?'Eisschild aktiv – du bist kurz geschützt!':'Sternenfeuer aktiv – du wirfst schneller!'}}
+  for(let i=enemy.length-1;i>=0;i--){if(player.inv===0&&player.shield===0&&hit(enemy[i],player)){let o=enemy.splice(i,1)[0];player.hp--;player.inv=70;burst(player.x+16,player.y+20,'#ff9b9b',12);if(player.hp<=0){draw();finishLoss();return}}}
+  $('bossHud').textContent=`Energie: ${player.hp}/${player.maxHp} · ${santa.form===2?'Dämonenkönig':'Weihnachtsmann'}: ${santa.hp}/${santa.maxHp} · Form ${santa.form}/2`;
+  draw();requestAnimationFrame(loop);
+ }
+ draw();loop();
+}
+$('adminBtn').onclick=()=>{ $('code').value='';$('err').textContent='';show('login')};
+$('loginGo').onclick=()=>{if($('code').value==='papa112'){hide('login');$('adminInfo').textContent=adminBypass?'Portal ist für diese Sitzung geöffnet.':'Countdown läuft normal. Die Freischaltung wird nicht gespeichert.';show('admin')}else $('err').textContent='Code falsch.'};
+$('bypass').onclick=()=>{adminBypass=true;hide('admin');tick();show('home');renderLevels()};
+$('restore').onclick=()=>{adminBypass=false;hide('admin');if(Date.now()<unlock){hide('home');hide('game');hide('ending');show('locked')}tick()};
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>hide(b.dataset.close));
+tick();setInterval(tick,1000);if(isOpen()){hide('locked');show('home');renderLevels()}
+})();
+</script></body></html>
